@@ -75,7 +75,7 @@ You now have full root access to your JCOW414 router! 🎉
 
 ### Step 2: Download & Flash OpenWrt Factory Image (.trx)
 
-1. Download the latest **`openwrt-asjohn720-1.1-jcow414-econet-en7528-jiofiber_jcow414-squashfs-tclinux.trx`** (or `openwrt-jiofiber_jcow414_v1.1.trx`) from [Releases](https://github.com/Asjohn720/jiofiber-jcow414-openwrt/releases).
+1. Download the latest **`openwrt-jiofiber_jcow414_v1.1.trx`** (or `openwrt-jiofiber_jcow414_v1.1.trx`) from [Releases](https://github.com/Asjohn720/jiofiber-jcow414-openwrt/releases).
 2. On your PC, open a terminal in the folder where you downloaded the `.trx` file and start a local HTTP server:
    ```bash
    python -m http.server 8000
@@ -84,7 +84,7 @@ You now have full root access to your JCOW414 router! 🎉
    ```sh
    cd /tmp
    # Replace <YOUR_PC_IP> with your computer's actual LAN IP (e.g., 192.168.29.x)
-   wget http://<YOUR_PC_IP>:8000/openwrt-asjohn720-1.1-jcow414-econet-en7528-jiofiber_jcow414-squashfs-tclinux.trx -O openwrt.trx
+   wget http://<YOUR_PC_IP>:8000/openwrt-jiofiber_jcow414_v1.1.trx -O openwrt.trx
    ```
 4. Flash the factory image into **Bank 1 (`tclinux`)** using the mandatory `-f` force flag:
    ```sh

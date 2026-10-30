@@ -263,6 +263,9 @@ $newSalt = New-Object byte[] 8
 $rng.GetBytes($newSalt)
 $newPair = Derive-KeyIV $newSalt $activePassBytes
 
+$aes = [System.Security.Cryptography.Aes]::Create()
+$aes.Mode = [System.Security.Cryptography.CipherMode]::CBC
+$aes.Padding = [System.Security.Cryptography.PaddingMode]::PKCS7
 $aes.Key = $newPair.Key
 $aes.IV = $newPair.IV
 $enc = $aes.CreateEncryptor()

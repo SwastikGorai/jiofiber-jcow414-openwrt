@@ -54,11 +54,13 @@ To inject the root payload into your downloaded backup:
 
 *(Advanced users can also manually decrypt and re-encrypt using OpenSSL with passphrase `"BE F2 26 75 7C B1 49 CB 04 CD CA 84 DC 5B E9 55"`).*
 
-This instantly creates **`backup_root_ready.enc`** in your folder!
+This instantly creates **`<original-backup-name>_MODIFIED.enc`** in your folder (for example `RSVOTKHEM068672_JCOW414_MODIFIED.enc`).
+
+> ⚠️ **Keep the model name in the filename.** The stock firmware rejects any restore file whose name does not contain the router's product class (e.g. `JCOW414`), showing *"Invalid File Selected. Please provide a Valid File."*
 
 #### 1.4 Upload Modified Backup & Connect
 1. In the router web panel, go to **Maintenance** &rarr; **Backup/Restore**.
-2. Under **Restore**, choose `backup_root_ready.enc` and click **Restore**.
+2. Under **Restore**, choose the generated `*_JCOW414_MODIFIED.enc` file and click **Restore**.
 3. ⚠️ **Normal & Expected Notice:** The web UI will show:  
    `"Failed to update configuration (checksum error)"`  
    **Do NOT panic!** The router executed your injected payload in memory as root *before* checking the checksum. Telnet root shell is now active!
@@ -96,33 +98,54 @@ You now have full root access to your JCOW414 router! 🎉
 
 ### Step 3: Switch Active Boot Bank & Reboot
 
-Switch the hardware boot flag so the bootloader launches Bank 1 (OpenWrt):
+> **Shell matters here.** `/usr/bin/sys` exists **only in the stock firmware** and is used from the stock Telnet shell (`root@192.168.29.1`) before OpenWrt boots. It does **not** exist in OpenWrt. The OpenWrt-side equivalent is `/sbin/en75_chboot` — the two are not interchangeable.
+
+At this point the router is still running stock firmware from Bank 2 (`tclinux_slave`), and you have written OpenWrt into Bank 1 (`tclinux`). Switch the hardware boot flag to Bank 1 and reboot, from the **stock** shell:
 ```sh
+# STOCK firmware Telnet shell only (root@192.168.29.1):
 /usr/bin/sys bootflag swap
 reboot
 ```
 
-After ~60 seconds, connect an Ethernet cable to **LAN Port 1** (green & amber LEDs will blink) and open your browser:
-```
-http://192.168.1.1
-```
+After the reboot the router boots into **OpenWrt**. Wait until the front status LED turns **green** — this indicates a successful boot. Keep an **Ethernet cable** handy — Wi-Fi is not configured yet, so the first login must be done over Ethernet.
+
+1. Once the status LED is green, connect your PC to **LAN Port 1** of the router with an Ethernet cable (green & amber LEDs will blink).
+2. Wait ~60 seconds, then open `http://192.168.1.1` in your browser.
+3. If the page does not load (your PC did not get a DHCP lease), set your PC's Ethernet adapter to a static IP:
+   * **IP address:** `192.168.1.2`
+   * **Subnet mask:** `255.255.255.0`
+   * **Gateway:** `192.168.1.1`
+
+   Then open `http://192.168.1.1` again.
+4. Log in to the **OpenWrt LuCI** dashboard (prebuilt image: user `root`, password `root` — change it under **System → Administration**).
+5. Enable Wi-Fi: go to **Network → Wireless**, click **Edit** on each radio (2.4 GHz / 5 GHz), tick **Enable**, set your **SSID** and a **WPA2-PSK** key, then click **Save & Apply**.
+
 You will be greeted by the **OpenWrt LuCI Dashboard**! 🎉
+
+> **Bank switching once OpenWrt is running:** use `/sbin/en75_chboot` (there is no `/usr/bin/sys` in OpenWrt):
+> * `/sbin/en75_chboot` — print the current boot flag (e.g. `Current boot flag set to OS A (OpenWrt)`)
+> * `/sbin/en75_chboot factory` — set the boot flag to the stock firmware bank
+> * `/sbin/en75_chboot openwrt` — set the boot flag to the OpenWrt bank
+>
+> Always run `reboot` afterwards for the change to take effect.
 
 ---
 
 ## Dual-Bank Failsafe & Rollback
 
 The JCOW414 flash partition layout contains two independent firmware banks:
-* **Bank 1 (`mtd4` / `tclinux`):** OpenWrt (Flashing target)
-* **Bank 2 (`mtd7` / `tclinux_slave`):** Stock Jio R2.15 (Untouched recovery bank)
+* **Bank 1 (`mtd2` / `tclinux`):** OpenWrt target — inactive before flashing, receives the `.trx` (see Step 2)
+* **Bank 2 (`mtd5` / `tclinux_slave`):** Stock Jio R2.15 — the bank the stock firmware normally boots from; left untouched as the recovery bank
 
 If you ever wish to return to stock firmware:
 1. Access the OpenWrt terminal via SSH: `ssh root@192.168.1.1`.
-2. Revert the boot flag in the `reservearea` partition:
+2. Switch the boot flag back to the stock bank in the `reservearea` partition, then reboot:
    ```sh
-   # Swap boot flag back to Bank 2 (Stock)
+   /sbin/en75_chboot factory
    reboot
    ```
+3. To go back to OpenWrt again, run `/sbin/en75_chboot openwrt` followed by `reboot`. Running `/sbin/en75_chboot` with no arguments prints the current boot flag (e.g. `Current boot flag set to OS A (OpenWrt)`).
+
 *(Even in the event of an incomplete flash, the stock bootloader automatically rolls back if Bank 1 fails validation).*
 
 ---
@@ -180,7 +203,7 @@ The dual-bank flashable image will be generated under:
 | **2.4 GHz Wi-Fi** | MediaTek MT7603E | 802.11b/g/n 2T2R MIMO (PCIe Bus 1, `14c3:7603`) |
 | **5 GHz Wi-Fi** | MediaTek MT7613E | 802.11a/n/ac Wave 2 2T2R MU-MIMO (PCIe Bus 2, `14c3:7663`) |
 | **USB** | 2x USB Ports | USB 2.0 / USB 3.0 Host support (Storage & 4G/5G Dongles) |
-| **Failsafe** | Dual-Bank Flash | Bank 1 (`tclinux` / `mtd4`) + Bank 2 (`tclinux_slave` / `mtd7`) |
+| **Failsafe** | Dual-Bank Flash | Bank 1 (`tclinux` / `mtd2`) + Bank 2 (`tclinux_slave` / `mtd5`) |
 | **Wiki Page** | [OpenWrt ToH](https://openwrt.org/toh/sercomm/jcow414) | Official hardware dataentry & community guide |
 
 ---

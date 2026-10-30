@@ -44,7 +44,7 @@ You do **not** need to open your router or solder serial wires. Flashing is perf
 To inject the root payload into your downloaded backup:
 
 * **On Windows (1-Click Standalone):**  
-  Download [`JioFiber_Universal_Root_Unlocker_For_Windows.bat`](https://raw.githubusercontent.com/Asjohn720/jiofiber-jcow414-openwrt/main/tools/JioFiber_Universal_Root_Unlocker_For_Windows.bat).  
+  Download [`JioFiber_Universal_Root_Unlocker_For_Windows.bat`](https://raw.githubusercontent.com/SwastikGorai/jiofiber-jcow414-openwrt/main/tools/JioFiber_Universal_Root_Unlocker_For_Windows.bat).  
   👉 **Drag & drop** your downloaded `RSV..._JCOW414.enc` file directly onto `bat` (or double-click it!). 
 
 * **On Linux / macOS (Python):**  
